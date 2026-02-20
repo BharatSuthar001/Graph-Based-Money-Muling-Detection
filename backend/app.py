@@ -5,6 +5,7 @@ RIFT 2026 Hackathon - Graph Theory Track
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 import pandas as pd
 import os
 import time
