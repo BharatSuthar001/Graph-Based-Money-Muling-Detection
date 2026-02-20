@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FinForensics</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true">
+        <i class="fa-solid fa-shield-halved"></i>
+      </span>
+      <a class="brand-name" href="#" id="brandLink">FinForensics</a>
+    </div>
+
+    <div class="top-actions">
+      <div class="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="globalSearch" type="text" placeholder="Search account (e.g., ACC_00123)..." />
+        <button id="globalSearchBtn" class="btn btn-outline">Go</button>
+      </div>
+
+      <button id="themeBtn" class="btn btn-outline" type="button" title="Toggle theme">
+        <i class="fa-solid fa-circle-half-stroke"></i> Theme
+      </button>
+
+
+      <button id="newAnalysisBtn" class="btn btn-primary" type="button">
+        <i class="fa-solid fa-rotate"></i> New Analysis
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab active" data-target="home"><i class="fa-solid fa-house"></i> Home</button>
+    <button class="tab" data-target="upload"><i class="fa-solid fa-arrow-up-from-bracket"></i> Upload</button>
+    <button class="tab" data-target="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+    <button class="tab" data-target="graph"><i class="fa-solid fa-diagram-project"></i> Network Graph</button>
+    <button class="tab" data-target="rings"><i class="fa-solid fa-bullseye"></i> Fraud Rings</button>
+    <button class="tab" data-target="accounts"><i class="fa-solid fa-user-shield"></i> Suspicious Accounts</button>
+    <button class="tab" data-target="timeline"><i class="fa-regular fa-clock"></i> Timeline</button>
+    <button class="tab" data-target="reports"><i class="fa-regular fa-file-lines"></i> Reports</button>
+  </nav>
+
+  <main class="container">
+    <!-- HOME -->
+    <section class="panel show" id="panel-home">
+      <div class="home-hero">
+        <div class="hero-text">
+          <h1>Graph-Based Money Muling Detection</h1>
+          <p class="hero-sub">
+            Upload transaction CSVs, uncover hidden multi-hop fund flows, and export a compliant JSON report.
+            Built for fast investigation with interactive network visualization.
+          </p>
+
+          <div class="hero-cta">
+            <button class="btn btn-primary btn-lg" id="homeUploadBtn">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Upload Transactions
+            </button>
+            <button class="btn btn-outline btn-lg" id="homeSampleBtn">
+              <i class="fa-solid fa-database"></i> Try Sample Dataset
+            </button>
+            <button class="btn btn-outline btn-lg" id="homeDocsBtn">
+              <i class="fa-regular fa-circle-question"></i> How it Works
+            </button>
+          </div>
+
+          <div class="hero-note">
+            <span class="dot-live"></span>
+            <span>Includes cycle detection (3–5), smurfing fan-in/out (72h), shell chains + exports.</span>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-mini-title">Quick Snapshot</div>
+          <div class="mini-grid">
+            <div class="mini">
+              <div class="mini-k">Accounts</div>
+              <div class="mini-v" id="miniAccounts">—</div>
+            </div>
+            <div class="mini">
+              <div class="mini-k">Suspicious</div>
+              <div class="mini-v" id="miniSuspicious">—</div>
+            </div>
+            <div class="mini">
+              <div class="mini-k">Rings</div>
+              <div class="mini-v" id="miniRings">—</div>
+            </div>
+            <div class="mini">
+              <div class="mini-k">Time</div>
+              <div class="mini-v" id="miniTime">—</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="hero-mini-title">What you get</div>
+          <ul class="checklist">
+            <li><i class="fa-solid fa-check"></i> Interactive directed graph</li>
+            <li><i class="fa-solid fa-check"></i> Fraud ring summary table</li>
+            <li><i class="fa-solid fa-check"></i> Downloadable JSON in required format</li>
+            <li><i class="fa-solid fa-check"></i> CSV exports + Graph PNG/SVG + PDF</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="home-features">
+        <div class="feature">
+          <div class="feature-ico purple"><i class="fa-solid fa-rotate"></i></div>
+          <div class="feature-title">Cycle Routing</div>
+          <div class="muted">Detects circular routing rings (A → B → C → A) with length 3–5.</div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-ico green"><i class="fa-solid fa-bolt"></i></div>
+          <div class="feature-title">High Velocity Smurfing</div>
+          <div class="muted">Flags fan-in / fan-out bursts in tight time windows (72 hours).</div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-ico blue"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="feature-title">Layered Shell Chains</div>
+          <div class="muted">Finds 3+ hop paths through low-activity intermediates.</div>
+        </div>
+      </div>
+
+      <div class="home-section card">
+        <div class="row-between">
+          <div>
+            <h2 class="mb6">CSV format</h2>
+            <p class="muted">Make sure the column names match exactly.</p>
+          </div>
+          <button class="btn btn-outline" id="homeGoUploadBtn">
+            <i class="fa-solid fa-arrow-right"></i> Go to Upload
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Column</th>
+                <th>Type</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>transaction_id</td>
+                <td>String</td>
+                <td>TX_0001</td>
+              </tr>
+              <tr>
+                <td>sender_id</td>
+                <td>String</td>
+                <td>ACC_00123</td>
+              </tr>
+              <tr>
+                <td>receiver_id</td>
+                <td>String</td>
+                <td>ACC_00999</td>
+              </tr>
+              <tr>
+                <td>amount</td>
+                <td>Float</td>
+                <td>1250.75</td>
+              </tr>
+              <tr>
+                <td>timestamp</td>
+                <td>DateTime</td>
+                <td>2024-01-10 11:20:00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- simple collapsible docs -->
+      <div class="home-section card" id="docsCard">
+        <h2 class="mb6">How it works</h2>
+        <p class="muted">
+          The engine builds a directed transaction graph and detects known money muling structures:
+          cycles, smurfing (fan-in/out), and layered shell chains. A suspicion score is assigned (0–100).
+        </p>
+        <div class="pill-row">
+          <span class="pill">Graph Modeling</span>
+          <span class="pill">Cycle Search</span>
+          <span class="pill">Temporal Analysis</span>
+          <span class="pill">False Positive Control</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- UPLOAD -->
+    <section class="panel" id="panel-upload">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h2>Upload Transaction CSV</h2>
+            <p class="muted">
+              Required columns:
+              <code>transaction_id</code>, <code>sender_id</code>, <code>receiver_id</code>, <code>amount</code>,
+              <code>timestamp</code>
+            </p>
+          </div>
+
+          <div id="dropzone" class="dropzone">
+            <input id="fileInput" type="file" accept=".csv" hidden />
+            <div class="drop-inner">
+              <div class="drop-ico"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div class="drop-title">Drag & drop CSV here</div>
+              <div class="muted small">or click to browse</div>
+              <button id="browseBtn" class="btn btn-primary">
+                <i class="fa-regular fa-folder-open"></i> Browse
+              </button>
+            </div>
+          </div>
+
+          <div id="fileInfo" class="file-info hidden">
+            <div class="file-left">
+              <i class="fa-solid fa-file-csv"></i>
+              <div>
+                <div id="fileName" class="file-name">-</div>
+                <div id="fileSize" class="muted small">-</div>
+              </div>
+            </div>
+            <button id="removeFileBtn" class="btn btn-danger-outline btn-sm">
+              <i class="fa-solid fa-xmark"></i> Remove
+            </button>
+          </div>
+
+          <div class="actions">
+            <button id="runBtn" class="btn btn-success" disabled>
+              <i class="fa-solid fa-bolt"></i> Run Analysis
+            </button>
+            <button id="sampleBtn" class="btn btn-outline">
+              <i class="fa-solid fa-database"></i> Sample Dataset
+            </button>
+            <button id="downloadJsonBtn" class="btn btn-outline" disabled>
+              <i class="fa-solid fa-download"></i> Download JSON
+            </button>
+            <button id="exportPdfBtn" class="btn btn-outline" disabled>
+              <i class="fa-regular fa-file-pdf"></i> Export PDF
+            </button>
+          </div>
+
+          <div class="muted small">
+            Performance: optimized for up to ~10k transactions. Use “Suspicious-only” in Graph tab for large graphs.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>CSV Format Guide</h3>
+            <p class="muted">Exact column names and timestamp format required.</p>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Column</th>
+                  <th>Type</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>transaction_id</td>
+                  <td>String</td>
+                  <td>TX_0001</td>
+                </tr>
+                <tr>
+                  <td>sender_id</td>
+                  <td>String</td>
+                  <td>ACC_00123</td>
+                </tr>
+                <tr>
+                  <td>receiver_id</td>
+                  <td>String</td>
+                  <td>ACC_00999</td>
+                </tr>
+                <tr>
+                  <td>amount</td>
+                  <td>Float</td>
+                  <td>1250.75</td>
+                </tr>
+                <tr>
+                  <td>timestamp</td>
+                  <td>DateTime</td>
+                  <td>2024-01-10 11:20:00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="muted small">
+            Detection patterns: cycles (3–5), fan-in/out smurfing (72h), shell chains.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="panel" id="panel-dashboard">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Total Accounts</div>
+          <div id="kpiTotal" class="kpi-value">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Suspicious Accounts</div>
+          <div id="kpiSusp" class="kpi-value">0</div>
+          <div id="kpiSuspPct" class="muted small">0%</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Fraud Rings</div>
+          <div id="kpiRings" class="kpi-value">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Processing Time</div>
+          <div id="kpiTime" class="kpi-value">0s</div>
+        </div>
+      </div>
+
+      <div id="aiInsightBox" class="card ai-card hidden mb16">
+        <div class="card-head">
+          <div class="row-between">
+            <h3><i class="fa-solid fa-brain" style="color:var(--brand2)"></i> AI Forensic Insight</h3>
+            <span class="pill small">Gemini AI</span>
+          </div>
+        </div>
+        <p id="aiInsightText" class="ai-text"></p>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="card-head">
+            <h3>Risk Distribution</h3>
+            <p class="muted small">Based on suspicious account scores.</p>
+          </div>
+          <div class="chart"><canvas id="riskChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Ring Pattern Types</h3>
+            <p class="muted small">Counts by pattern type.</p>
+          </div>
+          <div class="chart"><canvas id="patternChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Velocity (Proxy)</h3>
+            <p class="muted small">Bucketed edge weights (fallback view).</p>
+          </div>
+          <div class="chart"><canvas id="velocityChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRAPH -->
+    <section class="panel" id="panel-graph">
+      <div class="grid grid-graph">
+        <div class="card">
+          <div class="card-head">
+            <h3>Graph Controls</h3>
+            <p class="muted small">Filters apply immediately.</p>
+          </div>
+
+          <label class="muted small">Min suspicion score</label>
+          <input id="minRisk" type="range" min="0" max="100" value="0" />
+          <div class="range-row">
+            <span class="muted small">0</span>
+            <span id="minRiskVal" class="muted small">0</span>
+            <span class="muted small">100</span>
+          </div>
+
+          <div class="toggle">
+            <input id="onlySuspicious" type="checkbox" />
+            <label for="onlySuspicious">Suspicious-only view</label>
+          </div>
+
+          <label class="muted small mt">Ring pattern filter</label>
+          <select id="patternFilter">
+            <option value="all" selected>All</option>
+            <option value="cycle">cycle</option>
+            <option value="fan_in">fan_in</option>
+            <option value="fan_out">fan_out</option>
+            <option value="shell_network">shell_network</option>
+          </select>
+
+          <div class="divider"></div>
+
+          <div class="btn-row">
+            <button id="zoomIn" class="btn btn-outline btn-sm"><i
+                class="fa-solid fa-magnifying-glass-plus"></i></button>
+            <button id="zoomOut" class="btn btn-outline btn-sm"><i
+                class="fa-solid fa-magnifying-glass-minus"></i></button>
+            <button id="resetView" class="btn btn-outline btn-sm"><i
+                class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+            <button id="toggleLabels" class="btn btn-outline btn-sm"><i class="fa-solid fa-tag"></i></button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="btn-row">
+            <button id="exportPNG" class="btn btn-outline btn-sm"><i class="fa-regular fa-image"></i> PNG</button>
+            <button id="exportSVG" class="btn btn-outline btn-sm"><i class="fa-regular fa-file-code"></i> SVG</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="muted small">Selected node</div>
+          <div id="selectedNode" class="selected">Click a node to view details.</div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="dot normal"></span> Normal</div>
+            <div class="legend-item"><span class="dot medium"></span> Suspicious</div>
+            <div class="legend-item"><span class="dot high"></span> High risk</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Transaction Network</h3>
+            <p class="muted small">Hover nodes for quick stats. Click to pin details.</p>
+          </div>
+
+          <div id="graphWrap" class="graph-wrap">
+            <svg id="graphSvg"></svg>
+            <div id="nodeTip" class="node-tip"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RINGS -->
+    <section class="panel" id="panel-rings">
+      <div class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Fraud Ring Summary</h2>
+            <p class="muted small">Click “View” to highlight a ring in the graph.</p>
+          </div>
+          <input id="ringsSearch" class="input" placeholder="Search rings/accounts..." />
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Ring ID</th>
+                <th>Pattern Type</th>
+                <th>Member Count</th>
+                <th>Risk Score</th>
+                <th>Member Account IDs</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ringsBody">
+              <tr>
+                <td colspan="6" class="muted">Run analysis to populate.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="panel" id="panel-accounts">
+      <div class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Suspicious Accounts</h2>
+            <p class="muted small">Sorted by suspicion score (descending).</p>
+          </div>
+
+          <div class="filters">
+            <input id="accountsSearch" class="input" placeholder="Search accounts/patterns..." />
+            <select id="riskFilter">
+              <option value="all" selected>All</option>
+              <option value="high">High (≥70)</option>
+              <option value="med">Medium (40–69)</option>
+              <option value="low">Low (&lt;40)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Account ID</th>
+                <th>Suspicion Score</th>
+                <th>Detected Patterns</th>
+                <th>Ring ID</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="accountsBody">
+              <tr>
+                <td colspan="5" class="muted">Run analysis to populate.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMELINE -->
+    <section class="panel" id="panel-timeline">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h2>Timeline Analysis</h2>
+            <p class="muted small">If backend doesn’t return buckets, a proxy view is shown.</p>
+          </div>
+          <div class="chart tall"><canvas id="timelineChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Temporal KPIs</h3>
+            <p class="muted small">Quick indicators for velocity and after-hours activity.</p>
+          </div>
+
+          <div class="kpi-list">
+            <div class="kpi-line"><span class="muted">Peak hour</span><strong id="peakHour">—</strong></div>
+            <div class="kpi-line"><span class="muted">Highest velocity</span><strong id="highVel">—</strong></div>
+            <div class="kpi-line"><span class="muted">Analysis period</span><strong id="period">—</strong></div>
+            <div class="kpi-line"><span class="muted">After-hours share</span><strong id="afterHours">—</strong></div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="muted small">
+            Want real timeline buckets (hour/day)? We can add a backend field without changing required JSON export
+            format.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="panel" id="panel-reports">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h2>Reports</h2>
+            <p class="muted small">Exports are enabled after analysis.</p>
+          </div>
+
+          <div class="actions">
+            <button id="downloadJsonBtn2" class="btn btn-primary" disabled>
+              <i class="fa-solid fa-file-export"></i> Download JSON
+            </button>
+            <button id="downloadCsvBtn" class="btn btn-outline" disabled>
+              <i class="fa-solid fa-table"></i> Download CSVs
+            </button>
+            <button id="exportPdfBtn2" class="btn btn-outline" disabled>
+              <i class="fa-regular fa-file-pdf"></i> Export PDF
+            </button>
+          </div>
+
+          <div class="divider"></div>
+          <div class="muted small">
+            JSON export follows the exact structure required for evaluation.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Export History</h3>
+            <p class="muted small">Local-only session log.</p>
+          </div>
+          <div id="history" class="history muted small">No exports yet.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toastHost" class="toast-host"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
