@@ -1,3 +1,30 @@
+import os
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+
+# 1. Fix the pathing logic for Vercel
+# This finds the 'frontend' folder by going up one level from 'backend'
+base_dir = os.path.dirname(os.path.abspath(__file__))
+frontend_dir = os.path.join(os.path.dirname(base_dir), 'frontend')
+
+app = Flask(__name__, static_folder=frontend_dir, static_url_path='')
+CORS(app)
+
+# 2. Add the specific index route
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+# 3. Add a helper route to serve CSS/JS files
+@app.route('/<path:path>')
+def serve_static_files(path):
+    # If the file exists in the frontend folder, serve it
+    if os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    # Otherwise, fallback to index.html (important for the UI tabs)
+    return send_from_directory(app.static_folder, 'index.html')
+
+# --- Keep your /api/analyze and other logic below this line ---
 """
 Money Muling Detection Engine - Flask Backend
 RIFT 2026 Hackathon - Graph Theory Track
