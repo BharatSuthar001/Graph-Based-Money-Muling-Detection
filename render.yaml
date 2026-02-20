@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: finforensics-backend
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn app:app
