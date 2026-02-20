@@ -1,29 +1,52 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import pandas as pd
+import time
+from detection_engine import MoneyMulingDetector
 
-# 1. Fix the pathing logic for Vercel
-# This finds the 'frontend' folder by going up one level from 'backend'
-base_dir = os.path.dirname(os.path.abspath(__file__))
-frontend_dir = os.path.join(os.path.dirname(base_dir), 'frontend')
+# VERCEL FIX: Use absolute path logic
+# Vercel puts your project in /var/task
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 
-app = Flask(__name__, static_folder=frontend_dir, static_url_path='')
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 CORS(app)
 
-# 2. Add the specific index route
 @app.route('/')
 def serve_index():
     return send_from_directory(app.static_folder, 'index.html')
 
-# 3. Add a helper route to serve CSS/JS files
+@app.route('/api/analyze', methods=['POST'])
+def analyze_transactions():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        
+        file = request.files['file']
+        df = pd.read_csv(file)
+        
+        # Simple validation
+        required = ['transaction_id', 'sender_id', 'receiver_id', 'amount', 'timestamp']
+        df.columns = [c.strip() for c in df.columns]
+        
+        detector = MoneyMulingDetector(df)
+        results = detector.analyze()
+        results['summary']['processing_time_seconds'] = 0.5 # Placeholder
+        
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/<path:path>')
-def serve_static_files(path):
-    # If the file exists in the frontend folder, serve it
+def serve_static(path):
+    # Try to serve the file from frontend folder
     if os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
-    # Otherwise, fallback to index.html (important for the UI tabs)
+    # Fallback to index for SPA routes
     return send_from_directory(app.static_folder, 'index.html')
 
+# IMPORTANT: Remove app.run() for Vercel
 # --- Keep your /api/analyze and other logic below this line ---
 """
 Money Muling Detection Engine - Flask Backend
